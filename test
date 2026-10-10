@@ -1,3 +1,70 @@
+local _wp_server = "https://www.warpahexploits.pro"
+local _wp_token  = getgenv and getgenv()._warpah_token or ""
+local _wp_key    = getgenv and getgenv().script_key or ""
+
+local function _wp_kick(reason)
+    local lp = game:GetService("Players").LocalPlayer
+    pcall(function() lp:Kick(reason or "") end)
+    pcall(function()
+        game:GetService("TeleportService"):Teleport(game.PlaceId, lp)
+    end)
+    while true do task.wait(999) end
+end
+
+if _wp_token == "" or _wp_key == "" then
+    _wp_kick("Loader Gagal Dimuat Execute ulang")
+    return
+end
+
+local _wp_verified = false
+pcall(function()
+    local HttpService = game:GetService("HttpService")
+    local payload = HttpService:JSONEncode({ token = _wp_token, key = _wp_key })
+    local res
+
+    if request then
+        res = request({
+            Url = _wp_server .. "/api/verify-token",
+            Method = "POST",
+            Headers = { ["Content-Type"] = "application/json" },
+            Body = payload
+        })
+        res = res and res.Body
+    elseif http and http.request then
+        res = http.request({
+            Url = _wp_server .. "/api/verify-token",
+            Method = "POST",
+            Headers = { ["Content-Type"] = "application/json" },
+            Body = payload
+        })
+        res = res and res.Body
+    elseif syn and syn.request then
+        res = syn.request({
+            Url = _wp_server .. "/api/verify-token",
+            Method = "POST",
+            Headers = { ["Content-Type"] = "application/json" },
+            Body = payload
+        })
+        res = res and res.Body
+    end
+
+    if res then
+        local decoded = HttpService:JSONDecode(res)
+        if decoded and decoded.valid == true then
+            _wp_verified = true
+        end
+    end
+end)
+
+if not _wp_verified then
+    _wp_kick("Token invalid/expired")
+    return
+end
+
+if getgenv then
+    getgenv()._warpah_token = nil
+end
+
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
